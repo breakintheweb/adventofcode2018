@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"log"
 	"os"
 	"regexp"
@@ -43,11 +46,17 @@ func main() {
 		height, _ := strconv.Atoi(claim[4][0])
 		claims = append(claims, &Claim{claimId: claimId, top: top, left: left, width: width, height: height})
 	}
+	myImage := image.NewRGBA(image.Rect(0, 0, 1000, 1000))
 	// build a map of coors with claims
 	for _, c := range claims {
 		for y := c.left; y < c.left+c.width; y++ {
 			for x := c.top; x < c.top+c.height; x++ {
+				col := color.RGBA{255, 0, 0, 100}
+				myImage.Set(x, y, col)
+				// if overlapping, set color hue darker for number of overlaps
 				if grid[x][y] == 1 {
+					col = color.RGBA{255, 0, 0, 100 + uint8(grid[x][y]*20)}
+					myImage.Set(x, y, col)
 					overlapCounter++
 				}
 				grid[x][y]++
@@ -55,6 +64,7 @@ func main() {
 		}
 	}
 	// find non overlapping claim
+	nonOverlap := 0
 	for _, c := range claims {
 		isOverlap := false
 		for y := c.left; y < c.left+c.width; y++ {
@@ -65,9 +75,26 @@ func main() {
 			}
 		}
 		if !isOverlap {
+			nonOverlap = c.claimId
 			fmt.Printf("Non overlapping claim: %v\n", c.claimId)
 		}
 	}
+	// make non overlapping square green
+	for _, c := range claims {
+		if c.claimId == nonOverlap {
+			for y := c.left; y < c.left+c.width; y++ {
+				for x := c.top; x < c.top+c.height; x++ {
+					col := color.RGBA{0, 255, 0, 255}
+					myImage.Set(x, y, col)
+				}
+			}
+		}
+	}
+	outputFile, _ := os.Create("test.png")
+	png.Encode(outputFile, myImage)
+
+	// Don't forget to close files
+	outputFile.Close()
 	fmt.Println("Overlapping inches:", overlapCounter)
 	fmt.Println(time.Since(start))
 }
