@@ -28,11 +28,8 @@ func main() {
 	}
 	sort.Strings(lines)
 	currentGuard := 0
-	guardSleepTimes := make([][]int, 4000) //should calculate highest guard id instead of hardcoding 4000
-	for i := 0; i < 4000; i++ {
-		guardSleepTimes[i] = make([]int, 61) // minute counters, 61 is summ
-	}
-
+	guardSleepTimes := make(map[int]*[61]int)
+	fmt.Println(time.Since(start))
 	sleepTimer := 0 // time guard fell asleep
 	for _, line := range lines {
 		eventLog := re.FindAllStringSubmatch(line, -1)
@@ -45,6 +42,10 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
+			if guardSleepTimes[currentGuard] == nil {
+				guardSleepTimes[currentGuard] = &[61]int{}
+			}
+
 		}
 		if logType == "falls" {
 			sleepTimer = minutes
@@ -60,6 +61,7 @@ func main() {
 		}
 
 	}
+	fmt.Println(time.Since(start))
 	// Find sleepiest Guard
 	sleepiestGuard := 0
 	sleepiestMinute := 0
@@ -67,6 +69,10 @@ func main() {
 	sleepiestGuardMin := 0
 	for guard, sleepTime := range guardSleepTimes {
 		// only get guards that have slept
+		if sleepiestGuard == 0 {
+			sleepiestGuard = guard
+
+		}
 		if sleepTime[60] == 0 {
 			continue
 		}
@@ -83,6 +89,7 @@ func main() {
 		}
 
 	}
+	fmt.Println(time.Since(start))
 	// Find sleepiest hour for sleepiest guard
 	sleepiestHour := 0
 	sleepBuf = 0
